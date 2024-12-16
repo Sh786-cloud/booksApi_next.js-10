@@ -1,101 +1,112 @@
-import Image from "next/image";
+"use client"
+import { headers } from "next/headers";
+import { useState, useEffect, use } from "react"
 
-export default function Home() {
+type Book = {
+  id : number;
+  title : string;
+  author : string;
+  year : number
+};
+
+export default function Home () {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({id: 0, title: "", author: "", year: 0});
+
+  useEffect(() => {
+    async function fetchbooks () {
+      const res = await fetch("/api/books");
+    const data = await res.json();
+    setBooks(data);
+    setLoading(false);
+    }
+    fetchbooks()
+  }, []);
+
+  const handleSubmit = async () => {
+    const method = form.id? "PUT" : "POST" ;
+    const res = await fetch("/api/books", {
+      method,
+      headers:{"Content-Type": "application/json"},
+      body: JSON.stringify(form)
+    });
+    const data = await res.json();
+    setBooks(data);
+    setForm({id:0, title:"", author:"", year:0})
+  };
+
+  const handleDelete = async (id:number) => {
+    const res = await fetch('/api/books', {
+      method : 'DELETE',
+      headers : {'Content-Type':'application/json'},
+      body : JSON.stringify({id})
+    });
+    const data = await res.json();
+    setBooks(data);
+  };
+
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading Books API ...</div>
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="flex items-center justify-center min-h-screen">
+      <div>
+      <h1 className="text-3xl font-bold mb-4 text-center">BOOKS API</h1>
+      <div>
+        <input 
+        type="text" 
+        placeholder="Title" 
+        value={form.title}
+        onChange={(e)=> setForm({...form, title: e.target.value})}
+        className="border border-orange-400 mr-2 p-2 rounded-md"
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
+        <input 
+        type="text" 
+        placeholder="Author" 
+        value={form.author}
+        onChange={(e)=> setForm({...form, author: e.target.value})}
+        className="border border-orange-400 mr-2 p-2 rounded-md"
+        />
+        <input 
+        type="number" 
+        placeholder="Year" 
+        value={form.year}
+        onChange={(e)=> setForm({...form, year:parseInt(e.target.value)})}
+        className="border border-orange-400 mr-2 p-2 rounded-md"
+        />
+        <button className="bg-blue-500 hover:bg-blue-900 text-white px-4 py-2 rounded-md"
+        onClick={handleSubmit}
+        >
+          {form.id? "Update" : "Add"}
+        </button>
+      </div>
+      {/* Books List */}
+      <ul className="space-y-4">
+        {books?.map((book) => (
+          <li key={book.id}
+          className="px-4 mt-3 rounded shadow hover:shadow-lg border border-orange-600">
+            <h2 className="text-xl font-semibold mt-1">{book.title}</h2>
+            <p>Author : {book.author}</p>
+            <p>Year : {book.year}</p>
+            <button
+            onClick={()=> setForm(book)}
+            className="text-blue-500 hover:text-blue-800 hover:bg-yellow-300 py-1 px-2 mr-4 mb-1 bg-yellow-100 border-red-100 rounded-md"
+            >
+              Edit
+            </button>
+            <button
+            onClick={()=> handleDelete(book.id)}
+            className="text-red-500 hover:text-red-800 bg-yellow-100 border-red-300 hover:bg-yellow-300 py-1 px-2 rounded-md"
+            >
+              Delete
+            </button>
           </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        )) || <p>No Books Available</p>}
+      </ul>
+      </div>
     </div>
-  );
+  )
 }
